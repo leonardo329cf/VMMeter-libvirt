@@ -31,7 +31,7 @@ with open('benchmark.csv', 'w', newline='') as file:
 
     rowToWrite = []
     for i in domNames:
-        headers = ["Mesurament Time(ns)", "Cpu time(ns)", "System time(ns)", "User time(ns)", "Memory alocated(B)", "Memory Unused(B)", "Memory available(B)", "Memory usable(B)", "Disk caches(B)"]
+        headers = ["Measurament Time(ns)", "Cpu time(ns)", "System time(ns)", "User time(ns)", "Memory alocated(B)", "Memory Unused(B)", "Memory available(B)", "Memory usable(B)", "Disk caches(B)"]
         rowToWrite.extend(headers)
     writer.writerow(rowToWrite)
 
