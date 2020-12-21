@@ -6,10 +6,10 @@ import datetime as dt
 import time
 
 domNames = ["java11", "java8"]  # vm names
-mesuramentTime = 5   # in seconds
-mesuramentInterval = 2  # in seconds
+measuramentTime = 5   # in seconds
+measuramentInterval = 2  # in seconds
 
-numberMesuraments = round(mesuramentTime / mesuramentInterval)
+numberMeasuraments = round(measuramentTime / measuramentInterval)
 conn = libvirt.open('qemu:///system')
 if conn == None:
     print('Failed to open connection to qemu:///system', file=sys.stderr)
@@ -31,11 +31,11 @@ with open('benchmark.csv', 'w', newline='') as file:
 
     rowToWrite = []
     for i in domNames:
-        headers = ["Measurament Time(ns)", "Cpu time(ns)", "System time(ns)", "User time(ns)", "Memory alocated(B)", "Memory Unused(B)", "Memory available(B)", "Memory usable(B)", "Disk caches(B)"]
+        headers = ["Measurament Time(ns)", "Cpu time(ns)", "System time(ns)", "User time(ns)", "Memory allocated(B)", "Memory Unused(B)", "Memory available(B)", "Memory usable(B)", "Disk caches(B)"]
         rowToWrite.extend(headers)
     writer.writerow(rowToWrite)
 
-    for n in range(numberMesuraments):
+    for n in range(numberMeasuraments):
         rowToWrite = []
         for vm in dom:
             statsCpu = vm.getCPUStats(True)
@@ -46,6 +46,6 @@ with open('benchmark.csv', 'w', newline='') as file:
                 if name in ["actual", "unused", "available", "usable", "disk_caches"]:
                     rowToWrite.append(statsMem[name])
         writer.writerow(rowToWrite)
-        time.sleep(mesuramentInterval)
+        time.sleep(measuramentInterval)
 conn.close()
 exit(0)
