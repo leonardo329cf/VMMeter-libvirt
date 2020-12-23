@@ -19,7 +19,7 @@ dom = []
 for x in domNames:
     dom.append(conn.lookupByName(x))
     if dom == None:
-        print('Failed to find the domain '+domName, file=sys.stderr)
+        print('Failed to find the domain'+domName, file=sys.stderr)
         exit(1)
 
 with open('benchmark.csv', 'w', newline='') as file:
