@@ -1,51 +1,62 @@
-from __future__ import print_function
-import sys
 import libvirt
 import csv
 import datetime as dt
 import time
 
-domNames = ["java11", "java8"]  # vm names
-measuramentTime = 5   # in seconds
-measuramentInterval = 2  # in seconds
+# Nomes das VMs
+vm_names = ["java11", "java8"]  
 
-numberMeasuraments = round(measuramentTime / measuramentInterval)
-conn = libvirt.open('qemu:///system')
-if conn == None:
-    print('Failed to open connection to qemu:///system', file=sys.stderr)
-    exit(1)
+# Tempo de medição em segundos
+measurement_time = 5   
 
-dom = []
-for x in domNames:
-    dom.append(conn.lookupByName(x))
-    if dom == None:
-        print('Failed to find the domain'+domName, file=sys.stderr)
+# Intervalo de medição em segundos
+measurement_interval = 2  
+
+# Número de medições calculado com base no intervalo de medição
+number_measurements = int(measurement_time / measurement_interval)
+
+def write_csv(filename, headers, rows):
+    try:
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            writer.writerows(rows)
+    except Exception as e:
+        print(f'Erro ao escrever arquivo {filename}: {e}')
         exit(1)
 
-with open('benchmark.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    rowToWrite = []
-    for i in range(len(domNames)):
-        rowToWrite.extend([domNames[i],"","","","","","","",""])
-    writer.writerow(rowToWrite)
+def gather_vm_stats(conn, vm):
+    stats_cpu = vm.getCPUStats(True)
+    stats_mem = vm.memoryStats()
+    row = [vm.name, dt.datetime.now().strftime("%H:%M:%S")]
+    row.extend([stats_cpu[0]['cpu_time'], stats_cpu[0]['system_time'], stats_cpu[0]['user_time']])
+    for key in stats_mem:
+        if key in ["actual", "unused", "available", "usable", "disk_caches"]:
+            row.append(stats_mem[key])
+    return row
 
-    rowToWrite = []
-    for i in domNames:
-        headers = ["Measurament Time(ns)", "Cpu time(ns)", "System time(ns)", "User time(ns)", "Memory allocated(B)", "Memory Unused(B)", "Memory available(B)", "Memory usable(B)", "Disk caches(B)"]
-        rowToWrite.extend(headers)
-    writer.writerow(rowToWrite)
+   # Abre conexão com qemu:///system
+    conn = libvirt.open('qemu:///system')
+    if not conn:
+        raise Exception('Falha ao abrir conexão com qemu:///system')
 
-    for n in range(numberMeasuraments):
-        rowToWrite = []
-        for vm in dom:
-            statsCpu = vm.getCPUStats(True)
-            statsMem = vm.memoryStats()
-            rowToWrite.append(str(dt.datetime.now().time())[0:8])
-            rowToWrite.extend([str(statsCpu[0]['cpu_time']), str(statsCpu[0]['system_time']), str(statsCpu[0]['user_time'])])
-            for name in statsMem:
-                if name in ["actual", "unused", "available", "usable", "disk_caches"]:
-                    rowToWrite.append(statsMem[name])
-        writer.writerow(rowToWrite)
-        time.sleep(measuramentInterval)
+# Armazena as VMs
+ vms = []
+    for name in vm_names:
+        vm = conn.lookupByName(name)
+        if not vm:
+            raise Exception(f'Falha ao encontrar a VM {name}')
+        vms.append(vm)
+
+headers = ["VM", "Horário de Medição", "Tempo de CPU (ns)", "Tempo de Sistema (ns)", "Tempo de Usuário (ns)", "Memória Alocada (B)", "Memória Não Utilizada (B)", "Memória Disponível (B)", "Memória Usável (B)", "Caches de Disco (B)"]
+rows = []
+
+# Medindo as estatísticas das VMs a cada intervalo de tempo
+for i in range(number_measurements):
+    for vm in vms:
+        rows.append(gather_vm_stats(conn, vm))
+    time.sleep(measurement_interval)
+
+write_csv("benchmark.csv", headers, rows)
 conn.close()
 exit(0)
