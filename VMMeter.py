@@ -12,28 +12,33 @@ measurement_time = 5
 # Intervalo de medição em segundos
 measurement_interval = 2  
 
-# Número de medições calculado com base no intervalo de medição
-number_measurements = int(measurement_time / measurement_interval)
-
 def write_csv(filename, headers, rows):
-    try:
-        with open(filename, 'w', newline='') as file:
-            writer = csv.writer(file)
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file)
+        try:
             writer.writerow(headers)
             writer.writerows(rows)
-    except Exception as e:
-        print(f'Erro ao escrever arquivo {filename}: {e}')
-        exit(1)
+        except Exception as e:
+            print(f'Erro ao escrever arquivo {filename}: {e}')
+            exit(1)
+        finally:
+            file.close()
 
 def gather_vm_stats(conn, vm):
     stats_cpu = vm.getCPUStats(True)
     stats_mem = vm.memoryStats()
-    row = [vm.name, dt.datetime.now().strftime("%H:%M:%S")]
-    row.extend([stats_cpu[0]['cpu_time'], stats_cpu[0]['system_time'], stats_cpu[0]['user_time']])
-    for key in stats_mem:
-        if key in ["actual", "unused", "available", "usable", "disk_caches"]:
-            row.append(stats_mem[key])
-    return row
+    return {
+        "VM": vm.name,
+        "Horário de Medição": dt.datetime.now().strftime("%H:%M:%S"),
+        "Tempo de CPU (ns)": stats_cpu[0]['cpu_time'],
+        "Tempo de Sistema (ns)": stats_cpu[0]['system_time'],
+        "Tempo de Usuário (ns)": stats_cpu[0]['user_time'],
+        "Memória Alocada (B)": stats_mem.get("actual"),
+        "Memória Não Utilizada (B)": stats_mem.get("unused"),
+        "Memória Disponível (B)": stats_mem.get("available"),
+        "Memória Usável (B)": stats_mem.get("usable"),
+        "Caches de Disco (B)": stats_mem.get("disk_caches")
+    }
 
 # Abre conexão com qemu:///system
 conn = libvirt.open('qemu:///system')
@@ -48,15 +53,15 @@ for name in vm_names:
         raise Exception(f'Falha ao encontrar a VM {name}')
     vms.append(vm)
 
-headers = ["VM", "Horário de Medição", "Tempo de CPU (ns)", "Tempo de Sistema (ns)", "Tempo de Usuário (ns)", "Memória Alocada (B)", "Memória Não Utilizada (B)", "Memória Disponível (B)", "Memória Usável (B)", "Caches de Disco (B)"]
+headers = list(gather_vm_stats(conn, vms[0]).keys())
 rows = []
 
-# Medindo as estatísticas das VMs a cada intervalo de tempo
-for i in range(number_measurements):
+end_time = time.time() + measurement_time
+while time.time() < end_time:
     for vm in vms:
         rows.append(gather_vm_stats(conn, vm))
     time.sleep(measurement_interval)
 
-write_csv("benchmark.csv", headers, rows)
+write_csv("benchmark.csv", headers, [list(row.values()) for row in rows])
 conn.close()
 exit(0)
