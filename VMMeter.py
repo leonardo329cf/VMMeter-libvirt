@@ -35,18 +35,18 @@ def gather_vm_stats(conn, vm):
             row.append(stats_mem[key])
     return row
 
-   # Abre conexão com qemu:///system
-    conn = libvirt.open('qemu:///system')
-    if not conn:
-        raise Exception('Falha ao abrir conexão com qemu:///system')
+# Abre conexão com qemu:///system
+conn = libvirt.open('qemu:///system')
+if not conn:
+    raise Exception('Falha ao abrir conexão com qemu:///system')
 
 # Armazena as VMs
- vms = []
-    for name in vm_names:
-        vm = conn.lookupByName(name)
-        if not vm:
-            raise Exception(f'Falha ao encontrar a VM {name}')
-        vms.append(vm)
+vms = []
+for name in vm_names:
+    vm = conn.lookupByName(name)
+    if not vm:
+        raise Exception(f'Falha ao encontrar a VM {name}')
+    vms.append(vm)
 
 headers = ["VM", "Horário de Medição", "Tempo de CPU (ns)", "Tempo de Sistema (ns)", "Tempo de Usuário (ns)", "Memória Alocada (B)", "Memória Não Utilizada (B)", "Memória Disponível (B)", "Memória Usável (B)", "Caches de Disco (B)"]
 rows = []
