@@ -13,7 +13,7 @@ measurement_time = 5
 measurement_interval = 2  
 
 def write_csv(filename, headers, rows):
-    with open(filename, 'w', newline='') as file:
+    with open(filename, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         try:
             writer.writerow(headers)
@@ -21,14 +21,12 @@ def write_csv(filename, headers, rows):
         except Exception as e:
             print(f'Erro ao escrever arquivo {filename}: {e}')
             exit(1)
-        finally:
-            file.close()
 
 def gather_vm_stats(conn, vm):
     stats_cpu = vm.getCPUStats(True)
     stats_mem = vm.memoryStats()
     return {
-        "VM": vm.name,
+        "VM": vm.name(),
         "Horário de Medição": dt.datetime.now().strftime("%H:%M:%S"),
         "Tempo de CPU (ns)": stats_cpu[0]['cpu_time'],
         "Tempo de Sistema (ns)": stats_cpu[0]['system_time'],
