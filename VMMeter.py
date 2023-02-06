@@ -21,14 +21,14 @@ def write_csv(filename, headers, rows):
         except Exception as e:
             print(f'Erro ao escrever arquivo {filename}: {e}')
             exit(1)
-        finally:
+        finally:	
             file.close()
 
 def gather_vm_stats(conn, vm):
     stats_cpu = vm.getCPUStats(True)
     stats_mem = vm.memoryStats()
     return {
-        "VM": vm.name,
+        "VM": vm.name(), # corrigido a chamada do nome da VM
         "Horário de Medição": dt.datetime.now().strftime("%H:%M:%S"),
         "Tempo de CPU (ns)": stats_cpu[0]['cpu_time'],
         "Tempo de Sistema (ns)": stats_cpu[0]['system_time'],
@@ -37,7 +37,7 @@ def gather_vm_stats(conn, vm):
         "Memória Não Utilizada (B)": stats_mem.get("unused"),
         "Memória Disponível (B)": stats_mem.get("available"),
         "Memória Usável (B)": stats_mem.get("usable"),
-        "Caches de Disco (B)": stats_mem.get("disk_caches")
+        "Caches de Disco (B)": stats_mem.get("disk_caches", 0) # adicionado um valor padrão ao método get
     }
 
 # Abre conexão com qemu:///system
@@ -65,3 +65,4 @@ while time.time() < end_time:
 write_csv("benchmark.csv", headers, [list(row.values()) for row in rows])
 conn.close()
 exit(0)
+``
